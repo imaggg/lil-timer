@@ -1,4 +1,5 @@
 #include "ui.h"
+#include <string.h>
 
 static TimerPreset presets[MAX_PRESETS];
 static AppSettings settings;
@@ -20,7 +21,18 @@ void setup() {
 }
 
 void loop() {
+    // Sync UI flags from settings
+    ui.lang_uk = settings.lang_uk;
+    ui.swap_ab = settings.swap_ab;
+
     lilka::State input = lilka::controller.getState();
+
+    // Swap A and B buttons if setting enabled
+    if (settings.swap_ab) {
+        lilka::ButtonState temp = input.a;
+        input.a = input.b;
+        input.b = temp;
+    }
 
     // Update
     switch (ui.screen) {
@@ -46,8 +58,7 @@ void loop() {
             AppSettings prev = settings;
             uiUpdateSettings(ui, input, settings);
             if (ui.screen != SCREEN_SETTINGS ||
-                prev.brightness != settings.brightness ||
-                prev.volume != settings.volume) {
+                memcmp(&prev, &settings, sizeof(AppSettings)) != 0) {
                 storageSaveSettings(settings);
             }
             break;

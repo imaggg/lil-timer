@@ -4,13 +4,14 @@
 
 static Preferences prefs;
 
-static void setDefaultPreset0(TimerPreset& p) {
-    strncpy(p.name, "BW Film", MAX_PRESET_NAME);
+static void setDefaultPreset0(TimerPreset &p)
+{
+    strncpy(p.name, "Multigrade", MAX_PRESET_NAME);
     p.name[MAX_PRESET_NAME] = '\0';
     p.step_count = 3;
 
     strncpy(p.steps[0].label, "DEV", MAX_LABEL_LEN);
-    p.steps[0].duration_sec = 300;
+    p.steps[0].duration_sec = 90;
     p.steps[0].end_sound_enabled = true;
 
     strncpy(p.steps[1].label, "STOP", MAX_LABEL_LEN);
@@ -18,16 +19,18 @@ static void setDefaultPreset0(TimerPreset& p) {
     p.steps[1].end_sound_enabled = true;
 
     strncpy(p.steps[2].label, "FIX", MAX_LABEL_LEN);
-    p.steps[2].duration_sec = 300;
+    p.steps[2].duration_sec = 90;
     p.steps[2].end_sound_enabled = true;
 }
 
-void storageInit() {
+void storageInit()
+{
     prefs.begin("dt_settings", true);
     bool initialized = prefs.getBool("init", false);
     prefs.end();
 
-    if (!initialized) {
+    if (!initialized)
+    {
         TimerPreset presets[MAX_PRESETS];
         AppSettings settings;
         settings.brightness = DEFAULT_BRIGHTNESS;
@@ -35,7 +38,8 @@ void storageInit() {
         settings.lang_uk = false;
         settings.swap_ab = false;
 
-        for (int i = 0; i < MAX_PRESETS; i++) {
+        for (int i = 0; i < MAX_PRESETS; i++)
+        {
             memset(&presets[i], 0, sizeof(TimerPreset));
             char name[MAX_PRESET_NAME + 1];
             snprintf(name, sizeof(name), "Preset %d", i + 1);
@@ -46,7 +50,8 @@ void storageInit() {
         setDefaultPreset0(presets[0]);
 
         storageSaveSettings(settings);
-        for (int i = 0; i < MAX_PRESETS; i++) {
+        for (int i = 0; i < MAX_PRESETS; i++)
+        {
             storageSavePreset(i, presets[i]);
         }
 
@@ -56,7 +61,8 @@ void storageInit() {
     }
 }
 
-void storageLoadSettings(AppSettings& settings) {
+void storageLoadSettings(AppSettings &settings)
+{
     prefs.begin("dt_settings", true);
     settings.brightness = prefs.getUChar("bright", DEFAULT_BRIGHTNESS);
     settings.volume = prefs.getUChar("volume", DEFAULT_VOLUME);
@@ -64,11 +70,14 @@ void storageLoadSettings(AppSettings& settings) {
     settings.swap_ab = prefs.getBool("swap_ab", false);
     prefs.end();
 
-    if (settings.brightness >= BRIGHTNESS_COUNT) settings.brightness = DEFAULT_BRIGHTNESS;
-    if (settings.volume >= VOLUME_COUNT) settings.volume = DEFAULT_VOLUME;
+    if (settings.brightness >= BRIGHTNESS_COUNT)
+        settings.brightness = DEFAULT_BRIGHTNESS;
+    if (settings.volume >= VOLUME_COUNT)
+        settings.volume = DEFAULT_VOLUME;
 }
 
-void storageSaveSettings(const AppSettings& settings) {
+void storageSaveSettings(const AppSettings &settings)
+{
     prefs.begin("dt_settings", false);
     prefs.putUChar("bright", settings.brightness);
     prefs.putUChar("volume", settings.volume);
@@ -77,8 +86,10 @@ void storageSaveSettings(const AppSettings& settings) {
     prefs.end();
 }
 
-void storageLoadPreset(uint8_t index, TimerPreset& preset) {
-    if (index >= MAX_PRESETS) return;
+void storageLoadPreset(uint8_t index, TimerPreset &preset)
+{
+    if (index >= MAX_PRESETS)
+        return;
 
     char ns[16];
     snprintf(ns, sizeof(ns), "dt_preset_%d", index);
@@ -91,9 +102,11 @@ void storageLoadPreset(uint8_t index, TimerPreset& preset) {
     preset.name[MAX_PRESET_NAME] = '\0';
 
     preset.step_count = prefs.getUChar("count", 0);
-    if (preset.step_count > MAX_STEPS) preset.step_count = 0;
+    if (preset.step_count > MAX_STEPS)
+        preset.step_count = 0;
 
-    for (int i = 0; i < preset.step_count; i++) {
+    for (int i = 0; i < preset.step_count; i++)
+    {
         char key[8];
         snprintf(key, sizeof(key), "s%d_lbl", i);
         String lbl = prefs.getString(key, "DEV");
@@ -110,8 +123,10 @@ void storageLoadPreset(uint8_t index, TimerPreset& preset) {
     prefs.end();
 }
 
-void storageSavePreset(uint8_t index, const TimerPreset& preset) {
-    if (index >= MAX_PRESETS) return;
+void storageSavePreset(uint8_t index, const TimerPreset &preset)
+{
+    if (index >= MAX_PRESETS)
+        return;
 
     char ns[16];
     snprintf(ns, sizeof(ns), "dt_preset_%d", index);
@@ -120,7 +135,8 @@ void storageSavePreset(uint8_t index, const TimerPreset& preset) {
     prefs.putString("name", preset.name);
     prefs.putUChar("count", preset.step_count);
 
-    for (int i = 0; i < preset.step_count; i++) {
+    for (int i = 0; i < preset.step_count; i++)
+    {
         char key[8];
         snprintf(key, sizeof(key), "s%d_lbl", i);
         prefs.putString(key, preset.steps[i].label);
@@ -135,8 +151,10 @@ void storageSavePreset(uint8_t index, const TimerPreset& preset) {
     prefs.end();
 }
 
-void storageLoadAllPresets(TimerPreset presets[MAX_PRESETS]) {
-    for (int i = 0; i < MAX_PRESETS; i++) {
+void storageLoadAllPresets(TimerPreset presets[MAX_PRESETS])
+{
+    for (int i = 0; i < MAX_PRESETS; i++)
+    {
         storageLoadPreset(i, presets[i]);
     }
 }
