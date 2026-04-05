@@ -1,8 +1,8 @@
-# Darkroom Timer for Lilka v2
+# Darkroom Timer for Lilka
 
 ![Darkroom Timer](cover.jpeg)
 
-Custom firmware for [Lilka v2](https://github.com/and3rson/lilka) — a darkroom timer for paper development.
+Custom firmware for [Lilka](https://github.com/and3rson/lilka) — a darkroom timer for paper development.
 
 ## Features
 
@@ -40,9 +40,9 @@ pio run -e lilka_v2 -t upload
 
 ---
 
-# Таймер для фотолабораторії — Lilka v2
+# Darkroom Таймер на базі Lilka
 
-Кастомна прошивка для [Lilka v2](https://github.com/and3rson/lilka) — таймер для даркруму.
+Кастомна прошивка для [Lilka](https://github.com/and3rson/lilka) — таймер для даркруму.
 
 ## Можливості
 
@@ -52,7 +52,6 @@ pio run -e lilka_v2 -t upload
 - **Звукові сповіщення** — старт, позначки 30с, останні 10с, переходи
 - **WiFi веб-інтерфейс** — редагування пресетів і налаштувань з телефону/ноутбука
 - **Двомовний інтерфейс** — English / Українська
-- **Регулювання яскравості та гучності**
 
 ## Керування
 
