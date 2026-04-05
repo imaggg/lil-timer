@@ -1,10 +1,13 @@
 #include "ui.h"
+#include "wifi_manager.h"
+#include "web_server.h"
 #include <string.h>
 
 static TimerPreset presets[MAX_PRESETS];
 static AppSettings settings;
 static UIState ui;
 static lilka::Canvas canvas;
+static bool prev_wifi_enabled = false;
 
 void setup() {
     lilka::begin();
@@ -18,12 +21,36 @@ void setup() {
     storageLoadAllPresets(presets);
 
     uiInit(ui);
+
+    // Start WiFi if enabled at boot
+    if (settings.wifi_enabled) {
+        wifiStart(settings);
+        webServerStart(presets, settings);
+        prev_wifi_enabled = true;
+    }
 }
 
 void loop() {
     // Sync UI flags from settings
     ui.lang_uk = settings.lang_uk;
     ui.swap_ab = settings.swap_ab;
+
+    // Handle WiFi enable/disable changes
+    if (settings.wifi_enabled != prev_wifi_enabled) {
+        if (settings.wifi_enabled) {
+            wifiStart(settings);
+            webServerStart(presets, settings);
+        } else {
+            webServerStop();
+            wifiStop();
+        }
+        prev_wifi_enabled = settings.wifi_enabled;
+    }
+
+    // Handle web server requests
+    if (settings.wifi_enabled) {
+        webServerHandle();
+    }
 
     lilka::State input = lilka::controller.getState();
 

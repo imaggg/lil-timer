@@ -67,6 +67,11 @@ const char* const STEP_LABELS[] = {
 #define MIN_DURATION_SEC 5
 #define MAX_DURATION_SEC 5999 // 99:59
 
+// --- WiFi ---
+#define WIFI_AP_SSID "LilTimer"
+#define WIFI_AP_PASS "darkroom"
+#define WIFI_HOSTNAME "timer"
+
 // --- Display ---
 #define SCREEN_W 280
 #define SCREEN_H 240

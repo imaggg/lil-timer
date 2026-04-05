@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "wifi_manager.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -77,6 +78,16 @@ void uiDrawMenu(lilka::Canvas& c, UIState& ui, uint8_t bright) {
         snprintf(buf, sizeof(buf), "%s%s", i == ui.menu_cursor ? "> " : "  ", items[i]);
         c.setCursor(60, y + 14);
         c.print(buf);
+    }
+
+    // WiFi info
+    if (wifiIsRunning()) {
+        c.setFont(FONT_8x13);
+        c.setTextColor(dim);
+        String ip = wifiGetAPIP();
+        c.setCursor(20, 22);
+        c.print("WiFi: ");
+        c.print(ip.c_str());
     }
 
     c.setFont(FONT_8x13);
@@ -603,7 +614,7 @@ void uiUpdateTimer(UIState& ui, lilka::State& input) {
 // =====================
 static const char* VOLUME_NAMES[] = {"OFF", "LOW", "MED", "HIGH"};
 static const char* VOLUME_NAMES_UK[] = {"ВИМК", "ТИХО", "СЕРЕД", "ГУЧНО"};
-#define SETTINGS_COUNT 4
+#define SETTINGS_COUNT 5
 
 void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_t bright) {
     c.fillScreen(COLOR_BG);
@@ -619,12 +630,12 @@ void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_
     c.drawTextAligned(L(uk, "Settings", "Налаштування"), SCREEN_W / 2, 18, lilka::ALIGN_CENTER, lilka::ALIGN_START);
 
     c.setFont(FONT_9x15);
-    int16_t y0 = 55;
-    int16_t rowH = 34;
+    int16_t y0 = 48;
+    int16_t rowH = 30;
 
     // 0: Brightness
     int16_t y = y0;
-    if (ui.settings_cursor == 0) c.fillRect(15, y - 5, SCREEN_W - 30, 27, hl);
+    if (ui.settings_cursor == 0) c.fillRect(15, y - 4, SCREEN_W - 30, 25, hl);
     c.setTextColor(ui.settings_cursor == 0 ? fg : dim);
     c.setCursor(25, y + 12);
     c.print(L(uk, "Brightness ", "Яскравість "));
@@ -634,7 +645,7 @@ void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_
 
     // 1: Volume
     y = y0 + rowH;
-    if (ui.settings_cursor == 1) c.fillRect(15, y - 5, SCREEN_W - 30, 27, hl);
+    if (ui.settings_cursor == 1) c.fillRect(15, y - 4, SCREEN_W - 30, 25, hl);
     c.setTextColor(ui.settings_cursor == 1 ? fg : dim);
     c.setCursor(25, y + 12);
     c.print(L(uk, "Volume     ", "Гучність   "));
@@ -642,7 +653,7 @@ void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_
 
     // 2: Language
     y = y0 + rowH * 2;
-    if (ui.settings_cursor == 2) c.fillRect(15, y - 5, SCREEN_W - 30, 27, hl);
+    if (ui.settings_cursor == 2) c.fillRect(15, y - 4, SCREEN_W - 30, 25, hl);
     c.setTextColor(ui.settings_cursor == 2 ? fg : dim);
     c.setCursor(25, y + 12);
     c.print(L(uk, "Language   ", "Мова       "));
@@ -650,11 +661,29 @@ void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_
 
     // 3: Swap A/B
     y = y0 + rowH * 3;
-    if (ui.settings_cursor == 3) c.fillRect(15, y - 5, SCREEN_W - 30, 27, hl);
+    if (ui.settings_cursor == 3) c.fillRect(15, y - 4, SCREEN_W - 30, 25, hl);
     c.setTextColor(ui.settings_cursor == 3 ? fg : dim);
     c.setCursor(25, y + 12);
     c.print(L(uk, "Swap A/B   ", "Заміна A/B "));
     c.print(settings.swap_ab ? L(uk, "ON", "ВКЛ") : L(uk, "OFF", "ВИМК"));
+
+    // 4: WiFi
+    y = y0 + rowH * 4;
+    if (ui.settings_cursor == 4) c.fillRect(15, y - 4, SCREEN_W - 30, 25, hl);
+    c.setTextColor(ui.settings_cursor == 4 ? fg : dim);
+    c.setCursor(25, y + 12);
+    c.print("WiFi       ");
+    if (settings.wifi_enabled) {
+        c.print(L(uk, "ON", "ВКЛ"));
+        if (wifiIsRunning()) {
+            c.setFont(FONT_8x13);
+            c.print(" ");
+            c.print(wifiGetAPIP().c_str());
+            c.setFont(FONT_9x15);
+        }
+    } else {
+        c.print(L(uk, "OFF", "ВИМК"));
+    }
 
     // Hints
     c.setFont(FONT_8x13);
@@ -672,15 +701,14 @@ void uiUpdateSettings(UIState& ui, lilka::State& input, AppSettings& settings) {
     if (input.down.justPressed) ui.settings_cursor = (ui.settings_cursor + 1) % SETTINGS_COUNT;
 
     if (input.left.justPressed || input.right.justPressed) {
-        int dir = input.right.justPressed ? 1 : -1;
         switch (ui.settings_cursor) {
             case 0: // brightness
-                if (dir > 0 && settings.brightness < BRIGHTNESS_COUNT - 1) settings.brightness++;
-                if (dir < 0 && settings.brightness > 0) settings.brightness--;
+                if (input.right.justPressed && settings.brightness < BRIGHTNESS_COUNT - 1) settings.brightness++;
+                if (input.left.justPressed && settings.brightness > 0) settings.brightness--;
                 break;
             case 1: // volume
-                if (dir > 0 && settings.volume < VOLUME_COUNT - 1) settings.volume++;
-                if (dir < 0 && settings.volume > 0) settings.volume--;
+                if (input.right.justPressed && settings.volume < VOLUME_COUNT - 1) settings.volume++;
+                if (input.left.justPressed && settings.volume > 0) settings.volume--;
                 break;
             case 2: // language
                 settings.lang_uk = !settings.lang_uk;
@@ -689,6 +717,9 @@ void uiUpdateSettings(UIState& ui, lilka::State& input, AppSettings& settings) {
             case 3: // swap A/B
                 settings.swap_ab = !settings.swap_ab;
                 ui.swap_ab = settings.swap_ab;
+                break;
+            case 4: // WiFi
+                settings.wifi_enabled = !settings.wifi_enabled;
                 break;
         }
     }

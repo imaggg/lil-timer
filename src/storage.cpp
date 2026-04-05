@@ -15,7 +15,7 @@ static void setDefaultPreset0(TimerPreset &p)
     p.steps[0].end_sound_enabled = true;
 
     strncpy(p.steps[1].label, "STOP", MAX_LABEL_LEN);
-    p.steps[1].duration_sec = 30;
+    p.steps[1].duration_sec = 15;
     p.steps[1].end_sound_enabled = true;
 
     strncpy(p.steps[2].label, "FIX", MAX_LABEL_LEN);
@@ -37,6 +37,9 @@ void storageInit()
         settings.volume = DEFAULT_VOLUME;
         settings.lang_uk = false;
         settings.swap_ab = false;
+        settings.wifi_enabled = false;
+        memset(settings.wifi_ssid, 0, sizeof(settings.wifi_ssid));
+        memset(settings.wifi_pass, 0, sizeof(settings.wifi_pass));
 
         for (int i = 0; i < MAX_PRESETS; i++)
         {
@@ -68,6 +71,13 @@ void storageLoadSettings(AppSettings &settings)
     settings.volume = prefs.getUChar("volume", DEFAULT_VOLUME);
     settings.lang_uk = prefs.getBool("lang_uk", false);
     settings.swap_ab = prefs.getBool("swap_ab", false);
+    settings.wifi_enabled = prefs.getBool("wifi_en", false);
+    String ssid = prefs.getString("wifi_ssid", "");
+    strncpy(settings.wifi_ssid, ssid.c_str(), 32);
+    settings.wifi_ssid[32] = '\0';
+    String pass = prefs.getString("wifi_pass", "");
+    strncpy(settings.wifi_pass, pass.c_str(), 64);
+    settings.wifi_pass[64] = '\0';
     prefs.end();
 
     if (settings.brightness >= BRIGHTNESS_COUNT)
@@ -83,6 +93,9 @@ void storageSaveSettings(const AppSettings &settings)
     prefs.putUChar("volume", settings.volume);
     prefs.putBool("lang_uk", settings.lang_uk);
     prefs.putBool("swap_ab", settings.swap_ab);
+    prefs.putBool("wifi_en", settings.wifi_enabled);
+    prefs.putString("wifi_ssid", settings.wifi_ssid);
+    prefs.putString("wifi_pass", settings.wifi_pass);
     prefs.end();
 }
 
