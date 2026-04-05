@@ -1,5 +1,7 @@
 # Darkroom Timer for Lilka v2
 
+![Darkroom Timer](cover.jpeg)
+
 Custom firmware for [Lilka v2](https://github.com/and3rson/lilka) — a darkroom timer for paper development.
 
 ## Features
