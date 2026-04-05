@@ -32,9 +32,9 @@ pio run -e lilka_v2
 pio run -e lilka_v2 -t upload
 ```
 
-## License
+## About
 
-MIT
+100% of the code was written by [Claude](https://claude.ai) (Anthropic) via Claude Code.
 
 ---
 
