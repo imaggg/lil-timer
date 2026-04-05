@@ -5,7 +5,7 @@
 
 void wifiStart(const AppSettings& settings);
 void wifiStop();
+void wifiUpdate(); // call in loop — manages AP/STA transitions
 bool wifiIsRunning();
-String wifiGetAPIP();
-String wifiGetSTAIP();
+String wifiGetIP();  // returns STA IP if connected, else AP IP
 bool wifiIsSTAConnected();

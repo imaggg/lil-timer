@@ -47,8 +47,9 @@ void loop() {
         prev_wifi_enabled = settings.wifi_enabled;
     }
 
-    // Handle web server requests
+    // Handle web server requests & AP/STA transitions
     if (settings.wifi_enabled) {
+        wifiUpdate();
         webServerHandle();
     }
 
@@ -90,6 +91,17 @@ void loop() {
             }
             break;
         }
+        case SCREEN_DMAX_TIMER:
+            uiUpdateDmaxTimer(ui, input, settings.volume);
+            break;
+        case SCREEN_DMAX_EDITOR: {
+            AppScreen prev = ui.screen;
+            uiUpdateDmaxEditor(ui, input, presets[DMAX_PRESET_INDEX]);
+            if (ui.screen != prev) {
+                storageSavePreset(DMAX_PRESET_INDEX, presets[DMAX_PRESET_INDEX]);
+            }
+            break;
+        }
     }
 
     // Draw
@@ -108,6 +120,12 @@ void loop() {
             break;
         case SCREEN_SETTINGS:
             uiDrawSettings(canvas, ui, settings, settings.brightness);
+            break;
+        case SCREEN_DMAX_TIMER:
+            uiDrawDmaxTimer(canvas, ui, settings.brightness);
+            break;
+        case SCREEN_DMAX_EDITOR:
+            uiDrawDmaxEditor(canvas, ui, presets[DMAX_PRESET_INDEX], settings.brightness);
             break;
     }
 

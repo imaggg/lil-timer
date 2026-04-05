@@ -7,7 +7,17 @@ enum AppScreen {
     SCREEN_PRESET_SELECT,
     SCREEN_PRESET_EDITOR,
     SCREEN_TIMER,
-    SCREEN_SETTINGS
+    SCREEN_SETTINGS,
+    SCREEN_DMAX_TIMER,
+    SCREEN_DMAX_EDITOR
+};
+
+enum DmaxState {
+    DMAX_READY,
+    DMAX_DELAY,    // counting down delay seconds
+    DMAX_SIGNAL,   // beep played, 1s pause before stopwatch
+    DMAX_TIMING,   // stopwatch counting up
+    DMAX_DONE      // stopped, showing result
 };
 
 enum PresetSelectIntent {
@@ -41,6 +51,16 @@ struct UIState {
     bool swap_ab;   // mirror of AppSettings::swap_ab for draw functions
 
     TimerEngine timer_engine;
+
+    // Dmax test
+    DmaxState dmax_state;
+    uint16_t dmax_delay;          // delay setting (seconds)
+    uint16_t dmax_remaining;      // countdown remaining
+    uint16_t dmax_last_beeped;    // avoid double beeps
+    unsigned long dmax_tick_ms;
+    unsigned long dmax_signal_ms; // when signal state entered
+    unsigned long dmax_start_ms;  // stopwatch start
+    unsigned long dmax_result_ms; // elapsed when stopped
 };
 
 void uiInit(UIState& ui);
@@ -59,3 +79,9 @@ void uiUpdateTimer(UIState& ui, lilka::State& input);
 
 void uiDrawSettings(lilka::Canvas& c, UIState& ui, AppSettings& settings, uint8_t bright);
 void uiUpdateSettings(UIState& ui, lilka::State& input, AppSettings& settings);
+
+void uiDrawDmaxTimer(lilka::Canvas& c, UIState& ui, uint8_t bright);
+void uiUpdateDmaxTimer(UIState& ui, lilka::State& input, uint8_t volume);
+
+void uiDrawDmaxEditor(lilka::Canvas& c, UIState& ui, TimerPreset& preset, uint8_t bright);
+void uiUpdateDmaxEditor(UIState& ui, lilka::State& input, TimerPreset& preset);

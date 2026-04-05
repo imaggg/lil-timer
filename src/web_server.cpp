@@ -327,10 +327,11 @@ static void handleSaveSettings() {
 static void handleWifiStatus() {
     JsonDocument doc;
     doc["ap_ssid"] = WIFI_AP_SSID;
-    doc["ap_ip"] = wifiGetAPIP();
+    doc["ap_ip"] = WiFi.softAPIP().toString();
     doc["sta_connected"] = wifiIsSTAConnected();
-    doc["sta_ip"] = wifiGetSTAIP();
+    doc["sta_ip"] = WiFi.localIP().toString();
     doc["sta_ssid"] = g_settings->wifi_ssid;
+    doc["ip"] = wifiGetIP();
     String json;
     serializeJson(doc, json);
     server.send(200, "application/json", json);

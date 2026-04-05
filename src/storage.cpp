@@ -52,6 +52,15 @@ void storageInit()
         }
         setDefaultPreset0(presets[0]);
 
+        // Last preset = Dmax test
+        strncpy(presets[DMAX_PRESET_INDEX].name, "Dmax Test", MAX_PRESET_NAME);
+        presets[DMAX_PRESET_INDEX].name[MAX_PRESET_NAME] = '\0';
+        presets[DMAX_PRESET_INDEX].step_count = 1;
+        strncpy(presets[DMAX_PRESET_INDEX].steps[0].label, "DLY", MAX_LABEL_LEN);
+        presets[DMAX_PRESET_INDEX].steps[0].label[MAX_LABEL_LEN] = '\0';
+        presets[DMAX_PRESET_INDEX].steps[0].duration_sec = DMAX_DEFAULT_DELAY;
+        presets[DMAX_PRESET_INDEX].steps[0].end_sound_enabled = true;
+
         storageSaveSettings(settings);
         for (int i = 0; i < MAX_PRESETS; i++)
         {

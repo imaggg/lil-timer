@@ -5,7 +5,7 @@
 // --- Limits ---
 #define MAX_STEPS 10
 #define MAX_LABEL_LEN 5
-#define MAX_PRESETS 5
+#define MAX_PRESETS 4
 #define MAX_PRESET_NAME 10
 
 // --- Colors ---
@@ -17,13 +17,16 @@ const uint8_t BRIGHTNESS_RED[] = {40, 80, 140, 200, 255};
 #define DEFAULT_BRIGHTNESS 2
 
 // Color helpers — call with current brightness index
-inline uint16_t colorFG(uint8_t bright) {
+inline uint16_t colorFG(uint8_t bright)
+{
     return lilka::display.color565(BRIGHTNESS_RED[bright], 0, 0);
 }
-inline uint16_t colorDim(uint8_t bright) {
+inline uint16_t colorDim(uint8_t bright)
+{
     return lilka::display.color565(BRIGHTNESS_RED[bright] / 3, 0, 0);
 }
-inline uint16_t colorHL(uint8_t bright) {
+inline uint16_t colorHL(uint8_t bright)
+{
     return lilka::display.color565(BRIGHTNESS_RED[bright] / 7, 0, 0);
 }
 #define COLOR_BG 0x0000
@@ -58,17 +61,20 @@ const float VOLUME_MULT[] = {0.0f, 0.5f, 1.0f, 1.5f};
 #define BEEP_DONE_DUR 200
 
 // --- Predefined step labels ---
-const char* const STEP_LABELS[] = {
-    "DEV", "STOP", "FIX", "STB", "WASH", "HCA", "#1", "#2", "#3", "#4"
-};
+const char *const STEP_LABELS[] = {
+    "DEV", "STOP", "FIX", "STB", "WASH", "HCA", "#1", "#2", "#3", "#4", "#5"};
 #define STEP_LABEL_COUNT 10
 
 // --- Timer limits ---
-#define MIN_DURATION_SEC 5
+#define MIN_DURATION_SEC 1
 #define MAX_DURATION_SEC 5999 // 99:59
 
+// --- Dmax test ---
+#define DMAX_PRESET_INDEX 3
+#define DMAX_DEFAULT_DELAY 10
+
 // --- WiFi ---
-#define WIFI_AP_SSID "LilTimer"
+#define WIFI_AP_SSID "Darkroom Timer"
 #define WIFI_AP_PASS "darkroom"
 #define WIFI_HOSTNAME "timer"
 
