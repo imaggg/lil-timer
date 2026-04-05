@@ -81,7 +81,7 @@ void uiDrawMenu(lilka::Canvas &c, UIState &ui, uint8_t bright)
             c.fillRect(20, y - 5, SCREEN_W - 40, 27, hl);
         }
         c.setTextColor(i == ui.menu_cursor ? fg : dim);
-        char buf[24];
+        char buf[32];
         snprintf(buf, sizeof(buf), "%s%s", i == ui.menu_cursor ? "> " : "  ", items[i]);
         c.setCursor(30, y + 14);
         c.print(buf);
@@ -864,7 +864,7 @@ void uiDrawSettings(lilka::Canvas &c, UIState &ui, AppSettings &settings, uint8_
     y = y0 + rowH * 5;
     c.setTextColor(dim);
     c.setCursor(25, y + 12);
-    c.print("v1.3 by imaggg & claude");
+    c.print("v1.3.1 by imaggg & claude");
 
     // Hints
     c.setFont(FONT_8x13);
