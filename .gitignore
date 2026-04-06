@@ -9,3 +9,4 @@ web/
 merge_firmware.py
 .claude/
 .vscode/
+catalog/

@@ -78,6 +78,11 @@ const char *const STEP_LABELS[] = {
 #define WIFI_AP_PASS "darkroom"
 #define WIFI_HOSTNAME "timer"
 
+// --- External button ---
+// Available GPIO pins (index 0 in AppSettings = disabled)
+const uint8_t EXT_BTN_PINS[] = {12, 13, 14, 41, 47, 48};
+#define EXT_BTN_PIN_COUNT 6
+
 // --- Display ---
 #define SCREEN_W 280
 #define SCREEN_H 240

@@ -40,6 +40,7 @@ void storageInit()
         settings.wifi_enabled = false;
         memset(settings.wifi_ssid, 0, sizeof(settings.wifi_ssid));
         memset(settings.wifi_pass, 0, sizeof(settings.wifi_pass));
+        settings.ext_btn_pin_idx = 0;
 
         for (int i = 0; i < MAX_PRESETS; i++)
         {
@@ -87,12 +88,15 @@ void storageLoadSettings(AppSettings &settings)
     String pass = prefs.getString("wifi_pass", "");
     strncpy(settings.wifi_pass, pass.c_str(), 64);
     settings.wifi_pass[64] = '\0';
+    settings.ext_btn_pin_idx = prefs.getUChar("ext_btn", 0);
     prefs.end();
 
     if (settings.brightness >= BRIGHTNESS_COUNT)
         settings.brightness = DEFAULT_BRIGHTNESS;
     if (settings.volume >= VOLUME_COUNT)
         settings.volume = DEFAULT_VOLUME;
+    if (settings.ext_btn_pin_idx > EXT_BTN_PIN_COUNT)
+        settings.ext_btn_pin_idx = 0;
 }
 
 void storageSaveSettings(const AppSettings &settings)
@@ -105,6 +109,7 @@ void storageSaveSettings(const AppSettings &settings)
     prefs.putBool("wifi_en", settings.wifi_enabled);
     prefs.putString("wifi_ssid", settings.wifi_ssid);
     prefs.putString("wifi_pass", settings.wifi_pass);
+    prefs.putUChar("ext_btn", settings.ext_btn_pin_idx);
     prefs.end();
 }
 

@@ -8,6 +8,76 @@ static AppSettings settings;
 static UIState ui;
 static lilka::Canvas canvas;
 static bool prev_wifi_enabled = false;
+static uint8_t prev_ext_btn_pin_idx = 0xFF; // force init on first loop
+
+// --- External button state ---
+static int extBtnGpioPin = -1;
+static bool extBtnLast = HIGH;
+static unsigned long extBtnPressMs = 0;
+static int extBtnClicks = 0;
+static unsigned long extBtnReleaseMs = 0;
+
+#define EXT_BTN_DEBOUNCE_MS 20
+#define EXT_BTN_DOUBLE_MS   400
+
+static void extBtnInit(uint8_t idx)
+{
+    if (extBtnGpioPin >= 0)
+        pinMode(extBtnGpioPin, INPUT);
+    extBtnGpioPin = (idx == 0) ? -1 : (int)EXT_BTN_PINS[idx - 1];
+    if (extBtnGpioPin >= 0)
+        pinMode(extBtnGpioPin, INPUT_PULLUP);
+    extBtnLast = HIGH;
+    extBtnPressMs = 0;
+    extBtnClicks = 0;
+    extBtnReleaseMs = 0;
+}
+
+static void extBtnUpdate(UIState &ui)
+{
+    if (extBtnGpioPin < 0 || ui.screen != SCREEN_TIMER)
+        return;
+
+    bool cur = (bool)digitalRead(extBtnGpioPin);
+    unsigned long now = millis();
+    TimerEngine &eng = ui.timer_engine;
+
+    // Falling edge → press
+    if (extBtnLast == HIGH && cur == LOW)
+    {
+        extBtnPressMs = now;
+    }
+
+    // Rising edge → release
+    if (extBtnLast == LOW && cur == HIGH)
+    {
+        unsigned long held = now - extBtnPressMs;
+        if (held >= EXT_BTN_DEBOUNCE_MS)
+        {
+            extBtnClicks++;
+            extBtnReleaseMs = now;
+        }
+    }
+
+    // Dispatch pending clicks after double-click window
+    if (extBtnClicks > 0 && cur == HIGH &&
+        now - extBtnReleaseMs >= EXT_BTN_DOUBLE_MS)
+    {
+        if (extBtnClicks >= 2)
+        {
+            timerSkipStep(eng);
+        }
+        else
+        {
+            if (eng.state == TIMER_READY)        timerStart(eng);
+            else if (eng.state == TIMER_RUNNING) timerPause(eng);
+            else if (eng.state == TIMER_PAUSED)  timerResume(eng);
+        }
+        extBtnClicks = 0;
+    }
+
+    extBtnLast = cur;
+}
 
 void setup() {
     lilka::begin();
@@ -22,10 +92,13 @@ void setup() {
 
     uiInit(ui);
 
+    extBtnInit(settings.ext_btn_pin_idx);
+    prev_ext_btn_pin_idx = settings.ext_btn_pin_idx;
+
     // Start WiFi if enabled at boot
     if (settings.wifi_enabled) {
         wifiStart(settings);
-        webServerStart(presets, settings);
+        webServerStart(presets, settings, ui);
         prev_wifi_enabled = true;
     }
 }
@@ -35,11 +108,19 @@ void loop() {
     ui.lang_uk = settings.lang_uk;
     ui.swap_ab = settings.swap_ab;
 
+    // Handle external button pin changes
+    if (settings.ext_btn_pin_idx != prev_ext_btn_pin_idx) {
+        extBtnInit(settings.ext_btn_pin_idx);
+        prev_ext_btn_pin_idx = settings.ext_btn_pin_idx;
+    }
+
+    extBtnUpdate(ui);
+
     // Handle WiFi enable/disable changes
     if (settings.wifi_enabled != prev_wifi_enabled) {
         if (settings.wifi_enabled) {
             wifiStart(settings);
-            webServerStart(presets, settings);
+            webServerStart(presets, settings, ui);
         } else {
             webServerStop();
             wifiStop();

@@ -8,6 +8,7 @@
 static WebServer server(80);
 static TimerPreset* g_presets = nullptr;
 static AppSettings* g_settings = nullptr;
+static UIState* g_ui = nullptr;
 static bool g_running = false;
 
 // =====================
@@ -233,6 +234,44 @@ init();
 //     API HANDLERS
 // =====================
 
+static void sendTimerStatus() {
+    TimerEngine& eng = g_ui->timer_engine;
+    const char* stateStr = "ready";
+    if (eng.state == TIMER_RUNNING) stateStr = "running";
+    else if (eng.state == TIMER_PAUSED) stateStr = "paused";
+    else if (eng.state == TIMER_DONE) stateStr = "done";
+
+    JsonDocument doc;
+    doc["state"] = stateStr;
+    doc["step"] = eng.current_step;
+    doc["remaining"] = eng.remaining_sec;
+    if (eng.preset && eng.current_step < eng.preset->step_count)
+        doc["label"] = eng.preset->steps[eng.current_step].label;
+    String json;
+    serializeJson(doc, json);
+    server.send(200, "application/json", json);
+}
+
+static void handleTimerStatus() {
+    sendTimerStatus();
+}
+
+static void handleTimerToggle() {
+    if (g_ui && g_ui->timer_engine.preset) {
+        TimerEngine& eng = g_ui->timer_engine;
+        if (eng.state == TIMER_READY)        timerStart(eng);
+        else if (eng.state == TIMER_RUNNING) timerPause(eng);
+        else if (eng.state == TIMER_PAUSED)  timerResume(eng);
+    }
+    sendTimerStatus();
+}
+
+static void handleTimerNext() {
+    if (g_ui && g_ui->timer_engine.preset)
+        timerSkipStep(g_ui->timer_engine);
+    sendTimerStatus();
+}
+
 static void handleRoot() {
     server.send(200, "text/html", HTML_PAGE);
 }
@@ -386,10 +425,11 @@ static void handleWifiDisconnect() {
 //     PUBLIC API
 // =====================
 
-void webServerStart(TimerPreset presets[], AppSettings& settings) {
+void webServerStart(TimerPreset presets[], AppSettings& settings, UIState& ui) {
     if (g_running) return;
     g_presets = presets;
     g_settings = &settings;
+    g_ui = &ui;
 
     server.on("/", HTTP_GET, handleRoot);
     server.on("/api/presets", HTTP_GET, handleGetPresets);
@@ -399,6 +439,9 @@ void webServerStart(TimerPreset presets[], AppSettings& settings) {
     server.on("/api/wifi/scan", HTTP_GET, handleWifiScan);
     server.on("/api/wifi/connect", HTTP_POST, handleWifiConnect);
     server.on("/api/wifi/disconnect", HTTP_POST, handleWifiDisconnect);
+    server.on("/api/timer", HTTP_GET, handleTimerStatus);
+    server.on("/api/timer/toggle", HTTP_GET, handleTimerToggle);
+    server.on("/api/timer/next", HTTP_GET, handleTimerNext);
 
     for (int i = 0; i < MAX_PRESETS; i++) {
         char path[20];

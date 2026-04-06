@@ -17,11 +17,12 @@ struct TimerPreset {
 struct AppSettings {
     uint8_t brightness;
     uint8_t volume;
-    bool lang_uk;       // false = EN, true = UK
-    bool swap_ab;       // swap A and B buttons
+    bool lang_uk;            // false = EN, true = UK
+    bool swap_ab;            // swap A and B buttons
     bool wifi_enabled;
-    char wifi_ssid[33]; // STA SSID (empty = no STA)
-    char wifi_pass[65]; // STA password
+    char wifi_ssid[33];      // STA SSID (empty = no STA)
+    char wifi_pass[65];      // STA password
+    uint8_t ext_btn_pin_idx; // 0 = disabled, 1..EXT_BTN_PIN_COUNT = EXT_BTN_PINS[idx-1]
 };
 
 void storageInit();

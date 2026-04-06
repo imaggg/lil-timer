@@ -778,7 +778,7 @@ void uiUpdateTimer(UIState &ui, lilka::State &input)
 // =====================
 static const char *VOLUME_NAMES[] = {"OFF", "LOW", "MED", "HIGH"};
 static const char *VOLUME_NAMES_UK[] = {"ВИМК", "ТИХО", "СЕРЕДНЬО", "ГУЧНО"};
-#define SETTINGS_COUNT 5
+#define SETTINGS_COUNT 6
 
 void uiDrawSettings(lilka::Canvas &c, UIState &ui, AppSettings &settings, uint8_t bright)
 {
@@ -837,11 +837,29 @@ void uiDrawSettings(lilka::Canvas &c, UIState &ui, AppSettings &settings, uint8_
     c.print(L(uk, "Swap A/B   ", "Заміна A/B "));
     c.print(settings.swap_ab ? L(uk, "ON", "ВКЛ") : L(uk, "OFF", "ВИМК"));
 
-    // 4: WiFi
+    // 4: External button pin
     y = y0 + rowH * 4;
     if (ui.settings_cursor == 4)
         c.fillRect(15, y - 3, SCREEN_W - 30, 23, hl);
     c.setTextColor(ui.settings_cursor == 4 ? fg : dim);
+    c.setCursor(25, y + 12);
+    c.print(L(uk, "Ext Btn    ", "Зовн кн    "));
+    if (settings.ext_btn_pin_idx == 0)
+    {
+        c.print(L(uk, "OFF", "ВИМК"));
+    }
+    else
+    {
+        char pinBuf[4];
+        snprintf(pinBuf, sizeof(pinBuf), "%d", EXT_BTN_PINS[settings.ext_btn_pin_idx - 1]);
+        c.print(pinBuf);
+    }
+
+    // 5: WiFi
+    y = y0 + rowH * 5;
+    if (ui.settings_cursor == 5)
+        c.fillRect(15, y - 3, SCREEN_W - 30, 23, hl);
+    c.setTextColor(ui.settings_cursor == 5 ? fg : dim);
     c.setCursor(25, y + 12);
     c.print("WiFi       ");
     if (settings.wifi_enabled)
@@ -859,12 +877,6 @@ void uiDrawSettings(lilka::Canvas &c, UIState &ui, AppSettings &settings, uint8_
     {
         c.print(L(uk, "OFF", "ВИМК"));
     }
-
-    // 5: About
-    y = y0 + rowH * 5;
-    c.setTextColor(dim);
-    c.setCursor(25, y + 12);
-    c.print("v1.3.1 by imaggg & claude");
 
     // Hints
     c.setFont(FONT_8x13);
@@ -907,7 +919,13 @@ void uiUpdateSettings(UIState &ui, lilka::State &input, AppSettings &settings)
             settings.swap_ab = !settings.swap_ab;
             ui.swap_ab = settings.swap_ab;
             break;
-        case 4: // WiFi
+        case 4: // external button pin
+            if (input.right.justPressed)
+                settings.ext_btn_pin_idx = (settings.ext_btn_pin_idx + 1) % (EXT_BTN_PIN_COUNT + 1);
+            if (input.left.justPressed)
+                settings.ext_btn_pin_idx = (settings.ext_btn_pin_idx + EXT_BTN_PIN_COUNT) % (EXT_BTN_PIN_COUNT + 1);
+            break;
+        case 5: // WiFi
             settings.wifi_enabled = !settings.wifi_enabled;
             break;
         }

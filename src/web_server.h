@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storage.h"
+#include "ui.h"
 
-void webServerStart(TimerPreset presets[], AppSettings& settings);
+void webServerStart(TimerPreset presets[], AppSettings& settings, UIState& ui);
 void webServerStop();
 void webServerHandle();
 bool webServerIsRunning();
