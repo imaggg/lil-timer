@@ -5,3 +5,7 @@
 .vscode/ipch
 links
 .DS_Store
+web/
+merge_firmware.py
+.claude/
+.vscode/
