@@ -1,5 +1,6 @@
 #include "web_server.h"
 #include "wifi_manager.h"
+#include "obs_client.h"
 #include <WebServer.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
@@ -57,6 +58,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 <div class="tab active" data-tab="presets">Presets</div>
 <div class="tab" data-tab="settings">Settings</div>
 <div class="tab" data-tab="wifi">WiFi</div>
+<div class="tab" data-tab="obs">OBS</div>
 </div>
 <div id="presets" class="panel active">
 <div class="row"><label>Preset:</label><select id="psel"></select></div>
@@ -90,6 +92,24 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 <div id="wmsg"></div>
 </div>
 
+<div id="obs" class="panel">
+<h2>Connection</h2>
+<div class="row"><label>Host/IP:</label><input id="obs_host" maxlength="39" placeholder="192.168.1.100"></div>
+<div class="row"><label>Port:</label><input id="obs_port" type="number" min="1" max="65535" value="4455"></div>
+<div class="row"><label>Password:</label><input id="obs_pass" type="password" maxlength="63" placeholder="leave empty if none"></div>
+<h2>Scenes</h2>
+<div class="row"><label>[1] Dark:</label><input id="obs_s1" maxlength="31" placeholder="Darkroom"></div>
+<div class="row"><label>[2] Light:</label><input id="obs_s2" maxlength="31" placeholder="Lights On"></div>
+<div class="center"><button class="btn-primary" onclick="saveObs()">Save</button></div>
+<h2>Control</h2>
+<div id="obs_cur" class="msg">Scene: --</div>
+<div class="center">
+<button onclick="switchScene(1)">[1] Dark</button>
+<button onclick="switchScene(2)">[2] Light</button>
+</div>
+<div id="omsg"></div>
+</div>
+
 <script>
 const LABELS=['DEV','STOP','FIX','STB','WASH','HCA','#1','#2','#3','#4'];
 let P=[],cur=0;
@@ -120,6 +140,7 @@ async function init(){
     document.getElementById('slang').value=s.lang_uk?1:0;
     document.getElementById('sswap').value=s.swap_ab?1:0;
     loadWifiStatus();
+    loadObs();
   }catch(e){showMsg('pmsg','Error loading data: '+e,false)}
 }
 
@@ -227,8 +248,131 @@ async function disconnectWifi(){
   }catch(e){showMsg('wmsg','Error: '+e,false)}
 }
 
+async function loadObs(){
+  try{
+    let r=await fetch('/api/obs');let d=await r.json();
+    document.getElementById('obs_host').value=d.host||'';
+    document.getElementById('obs_port').value=d.port||4455;
+    document.getElementById('obs_pass').value='';
+    document.getElementById('obs_s1').value=d.scene1||'';
+    document.getElementById('obs_s2').value=d.scene2||'';
+    document.getElementById('obs_cur').textContent='Scene: ['+d.current+']';
+  }catch(e){}
+}
+
+async function saveObs(){
+  try{
+    let pass=document.getElementById('obs_pass').value;
+    let d={host:document.getElementById('obs_host').value.trim(),
+      port:+document.getElementById('obs_port').value||4455,
+      pass:pass,
+      scene1:document.getElementById('obs_s1').value.trim(),
+      scene2:document.getElementById('obs_s2').value.trim()};
+    let r=await fetch('/api/obs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    showMsg('omsg',r.ok?'Saved!':'Failed',r.ok);
+    if(r.ok&&pass)document.getElementById('obs_pass').value='';
+  }catch(e){showMsg('omsg','Error: '+e,false)}
+}
+
+async function switchScene(n){
+  try{
+    let r=await fetch('/api/obs/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scene:n})});
+    if(r.ok){document.getElementById('obs_cur').textContent='Scene: ['+n+']';showMsg('omsg','Scene '+n+' set',true);}
+    else showMsg('omsg','OBS unreachable',false);
+  }catch(e){showMsg('omsg','Error: '+e,false)}
+}
+
 init();
 </script></body></html>)rawliteral";
+
+static const char OVERLAY_RED_PAGE[] PROGMEM = R"obsoverlay(<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:transparent}
+body{display:flex;align-items:center;font-family:'Courier New',monospace}
+#w{width:100%;display:flex;align-items:center;gap:14px;padding:6px 18px;background:rgba(10,0,0,0.82);height:100%}
+#lbl{color:#ff2200;font-size:22px;font-weight:bold;width:52px;text-align:center;letter-spacing:1px;flex-shrink:0}
+#track{flex:1;background:#1a0000;height:8px;border-radius:4px;overflow:hidden;border:1px solid #330000}
+#fill{height:100%;width:0%;background:#cc0000;border-radius:4px;transition:width 0.85s linear}
+#time{color:#ff2200;font-size:22px;font-weight:bold;width:70px;text-align:right;letter-spacing:2px;flex-shrink:0}
+#dot{width:10px;height:10px;border-radius:50%;background:#cc0000;flex-shrink:0}
+.paused #dot{background:#ff6600;animation:bl 0.8s infinite}
+.paused #lbl,.paused #time{color:#ff6600}
+.ready #dot{background:#330000}
+.done #dot{background:#330000}
+.done #fill{background:#660000;width:100%}
+.done #lbl,.done #time{color:#660000}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+</style></head><body>
+<div id="w" class="ready">
+<div id="lbl">---</div>
+<div id="track"><div id="fill"></div></div>
+<div id="time">--:--</div>
+<div id="dot"></div>
+</div>
+<script>
+var w=document.getElementById('w'),lbl=document.getElementById('lbl'),fill=document.getElementById('fill'),time=document.getElementById('time');
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function poll(){
+fetch('/api/timer').then(function(r){return r.json()}).then(function(d){
+  w.className=d.state||'ready';
+  lbl.textContent=d.label||'---';
+  var pct=0;
+  if((d.state==='running'||d.state==='paused')&&d.total>0)pct=(d.total-d.remaining)/d.total*100;
+  else if(d.state==='done')pct=100;
+  fill.style.width=pct+'%';
+  if(d.state==='done')time.textContent='DONE';
+  else if(d.remaining>0)time.textContent=fmt(d.remaining);
+  else time.textContent='--:--';
+}).catch(function(){lbl.textContent='???';time.textContent='--:--'});
+}
+poll();setInterval(poll,1000);
+</script></body></html>)obsoverlay";
+
+static const char OVERLAY_LIGHT_PAGE[] PROGMEM = R"obslight(<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:transparent}
+body{display:flex;align-items:center;font-family:'Courier New',monospace}
+#w{width:100%;display:flex;align-items:center;gap:14px;padding:6px 18px;background:rgba(255,255,255,0.92);height:100%;border-bottom:2px solid #e5e7eb}
+#lbl{color:#111827;font-size:22px;font-weight:bold;width:52px;text-align:center;letter-spacing:1px;flex-shrink:0}
+#track{flex:1;background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden;border:1px solid #d1d5db}
+#fill{height:100%;width:0%;background:#374151;border-radius:4px;transition:width 0.85s linear}
+#time{color:#111827;font-size:22px;font-weight:bold;width:70px;text-align:right;letter-spacing:2px;flex-shrink:0}
+#dot{width:10px;height:10px;border-radius:50%;background:#374151;flex-shrink:0}
+.paused #dot{background:#d97706;animation:bl 0.8s infinite}
+.paused #lbl,.paused #time{color:#d97706}
+.paused #fill{background:#d97706}
+.ready #dot{background:#d1d5db}
+.done #dot{background:#d1d5db}
+.done #fill{background:#9ca3af;width:100%}
+.done #lbl,.done #time{color:#9ca3af}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+</style></head><body>
+<div id="w" class="ready">
+<div id="lbl">---</div>
+<div id="track"><div id="fill"></div></div>
+<div id="time">--:--</div>
+<div id="dot"></div>
+</div>
+<script>
+var w=document.getElementById('w'),lbl=document.getElementById('lbl'),fill=document.getElementById('fill'),time=document.getElementById('time');
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function poll(){
+fetch('/api/timer').then(function(r){return r.json()}).then(function(d){
+  w.className=d.state||'ready';
+  lbl.textContent=d.label||'---';
+  var pct=0;
+  if((d.state==='running'||d.state==='paused')&&d.total>0)pct=(d.total-d.remaining)/d.total*100;
+  else if(d.state==='done')pct=100;
+  fill.style.width=pct+'%';
+  if(d.state==='done')time.textContent='DONE';
+  else if(d.remaining>0)time.textContent=fmt(d.remaining);
+  else time.textContent='--:--';
+}).catch(function(){lbl.textContent='???';time.textContent='--:--'});
+}
+poll();setInterval(poll,1000);
+</script></body></html>)obslight";
 
 // =====================
 //     API HANDLERS
@@ -245,8 +389,10 @@ static void sendTimerStatus() {
     doc["state"] = stateStr;
     doc["step"] = eng.current_step;
     doc["remaining"] = eng.remaining_sec;
-    if (eng.preset && eng.current_step < eng.preset->step_count)
+    if (eng.preset && eng.current_step < eng.preset->step_count) {
         doc["label"] = eng.preset->steps[eng.current_step].label;
+        doc["total"] = eng.preset->steps[eng.current_step].duration_sec;
+    }
     String json;
     serializeJson(doc, json);
     server.send(200, "application/json", json);
@@ -274,6 +420,14 @@ static void handleTimerNext() {
 
 static void handleRoot() {
     server.send(200, "text/html", HTML_PAGE);
+}
+
+static void handleOverlayRed() {
+    server.send(200, "text/html", OVERLAY_RED_PAGE);
+}
+
+static void handleOverlayLight() {
+    server.send(200, "text/html", OVERLAY_LIGHT_PAGE);
 }
 
 static void handleGetPresets() {
@@ -421,6 +575,59 @@ static void handleWifiDisconnect() {
     server.send(200, "text/plain", "OK");
 }
 
+static void handleGetOBS() {
+    JsonDocument doc;
+    doc["host"] = g_settings->obs_host;
+    doc["port"] = g_settings->obs_port;
+    doc["has_pass"] = (g_settings->obs_pass[0] != '\0');
+    doc["scene1"] = g_settings->obs_scene1;
+    doc["scene2"] = g_settings->obs_scene2;
+    doc["current"] = g_ui ? (int)g_ui->obs_scene : 1;
+    String json;
+    serializeJson(doc, json);
+    server.send(200, "application/json", json);
+}
+
+static void handleSaveOBS() {
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, server.arg("plain"));
+    if (err) { server.send(400, "text/plain", "Invalid JSON"); return; }
+
+    const char* host = doc["host"] | "";
+    strncpy(g_settings->obs_host, host, 39);
+    g_settings->obs_host[39] = '\0';
+    g_settings->obs_port = doc["port"] | (uint16_t)OBS_DEFAULT_PORT;
+    if (g_settings->obs_port == 0) g_settings->obs_port = OBS_DEFAULT_PORT;
+    // Only update password if the field was sent and non-empty
+    if (doc["pass"].is<const char*>()) {
+        const char* pass = doc["pass"] | "";
+        strncpy(g_settings->obs_pass, pass, 63);
+        g_settings->obs_pass[63] = '\0';
+    }
+    const char* s1 = doc["scene1"] | OBS_DEFAULT_SCENE1;
+    strncpy(g_settings->obs_scene1, s1, 31);
+    g_settings->obs_scene1[31] = '\0';
+    const char* s2 = doc["scene2"] | OBS_DEFAULT_SCENE2;
+    strncpy(g_settings->obs_scene2, s2, 31);
+    g_settings->obs_scene2[31] = '\0';
+    storageSaveSettings(*g_settings);
+    server.send(200, "text/plain", "OK");
+}
+
+static void handleSwitchOBSScene() {
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, server.arg("plain"));
+    if (err) { server.send(400, "text/plain", "Invalid JSON"); return; }
+
+    int sceneNum = doc["scene"] | 1;
+    if (sceneNum < 1 || sceneNum > 2) sceneNum = 1;
+    if (g_ui) g_ui->obs_scene = (uint8_t)sceneNum;
+
+    const char* sceneName = (sceneNum == 1) ? g_settings->obs_scene1 : g_settings->obs_scene2;
+    bool ok = obsSetScene(g_settings->obs_host, g_settings->obs_port, g_settings->obs_pass, sceneName);
+    server.send(ok ? 200 : 500, "text/plain", ok ? "OK" : "OBS unreachable");
+}
+
 // =====================
 //     PUBLIC API
 // =====================
@@ -432,6 +639,9 @@ void webServerStart(TimerPreset presets[], AppSettings& settings, UIState& ui) {
     g_ui = &ui;
 
     server.on("/", HTTP_GET, handleRoot);
+    server.on("/overlay", HTTP_GET, handleOverlayRed);
+    server.on("/overlay-red", HTTP_GET, handleOverlayRed);
+    server.on("/overlay-light", HTTP_GET, handleOverlayLight);
     server.on("/api/presets", HTTP_GET, handleGetPresets);
     server.on("/api/settings", HTTP_GET, handleGetSettings);
     server.on("/api/settings", HTTP_POST, handleSaveSettings);
@@ -442,6 +652,9 @@ void webServerStart(TimerPreset presets[], AppSettings& settings, UIState& ui) {
     server.on("/api/timer", HTTP_GET, handleTimerStatus);
     server.on("/api/timer/toggle", HTTP_GET, handleTimerToggle);
     server.on("/api/timer/next", HTTP_GET, handleTimerNext);
+    server.on("/api/obs", HTTP_GET, handleGetOBS);
+    server.on("/api/obs", HTTP_POST, handleSaveOBS);
+    server.on("/api/obs/switch", HTTP_POST, handleSwitchOBSScene);
 
     for (int i = 0; i < MAX_PRESETS; i++) {
         char path[20];

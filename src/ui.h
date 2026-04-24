@@ -52,6 +52,8 @@ struct UIState {
 
     TimerEngine timer_engine;
 
+    uint8_t obs_scene;  // 1 or 2 (current OBS scene)
+
     // Dmax test
     DmaxState dmax_state;
     uint16_t dmax_delay;          // delay setting (seconds)

@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "wifi_manager.h"
 #include "web_server.h"
+#include "obs_client.h"
 #include <string.h>
 
 static TimerPreset presets[MAX_PRESETS];
@@ -141,6 +142,16 @@ void loop() {
         lilka::ButtonState temp = input.a;
         input.a = input.b;
         input.b = temp;
+    }
+
+    // Button C: toggle OBS scene (works on menu and timer screens)
+    if (input.c.justPressed &&
+        (ui.screen == SCREEN_MENU || ui.screen == SCREEN_TIMER)) {
+        ui.obs_scene = (ui.obs_scene == 1) ? 2 : 1;
+        if (settings.wifi_enabled && wifiIsSTAConnected() && settings.obs_host[0] != '\0') {
+            const char* scene = (ui.obs_scene == 1) ? settings.obs_scene1 : settings.obs_scene2;
+            obsSetScene(settings.obs_host, settings.obs_port, settings.obs_pass, scene);
+        }
     }
 
     // Update

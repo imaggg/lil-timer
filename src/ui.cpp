@@ -31,6 +31,7 @@ void uiInit(UIState &ui)
     ui.settings_cursor = 0;
     ui.lang_uk = false;
     ui.swap_ab = false;
+    ui.obs_scene = 1;
 }
 
 // =====================
@@ -101,9 +102,15 @@ void uiDrawMenu(lilka::Canvas &c, UIState &ui, uint8_t bright)
     c.setFont(FONT_8x13);
     c.setTextColor(dim);
     c.setCursor(20, SCREEN_H - 18);
-    char hintBuf[32];
-    snprintf(hintBuf, sizeof(hintBuf), "%s %s", btnA(ui.swap_ab), L(uk, "Select", "Обрати"));
+    char hintBuf[48];
+    snprintf(hintBuf, sizeof(hintBuf), "%s %s  [C] SCN", btnA(ui.swap_ab), L(uk, "Select", "Обрати"));
     c.print(hintBuf);
+
+    // OBS scene indicator [1] or [2] at bottom-right
+    char sceneBuf[4];
+    snprintf(sceneBuf, sizeof(sceneBuf), "[%d]", ui.obs_scene);
+    c.setCursor(SCREEN_W - 30, SCREEN_H - 18);
+    c.print(sceneBuf);
 }
 
 void uiUpdateMenu(UIState &ui, lilka::State &input)
@@ -640,9 +647,16 @@ void uiDrawTimer(lilka::Canvas &c, UIState &ui, uint8_t bright)
     c.print(step.label);
 
     char progBuf[10];
-    snprintf(progBuf, sizeof(progBuf), "%d / %d", eng.current_step + 1, eng.preset->step_count);
-    c.setCursor(SCREEN_W - 85, 30);
+    snprintf(progBuf, sizeof(progBuf), "%d/%d", eng.current_step + 1, eng.preset->step_count);
+    c.setCursor(SCREEN_W - 75, 30);
     c.print(progBuf);
+
+    // OBS scene indicator [1] or [2]
+    char sceneBuf[4];
+    snprintf(sceneBuf, sizeof(sceneBuf), "[%d]", ui.obs_scene);
+    c.setTextColor(dim);
+    c.setCursor(SCREEN_W - 30, 50);
+    c.print(sceneBuf);
 
     // State
     c.setFont(FONT_9x15);
@@ -717,19 +731,19 @@ void uiDrawTimer(lilka::Canvas &c, UIState &ui, uint8_t bright)
     switch (eng.state)
     {
     case TIMER_READY:
-        snprintf(hintBuf, sizeof(hintBuf), "%s %s  %s %s",
+        snprintf(hintBuf, sizeof(hintBuf), "%s %s  %s %s  [C]SCN",
                  btnA(ui.swap_ab), L(uk, "Start", "Старт"),
                  btnB(ui.swap_ab), L(uk, "Back", "Назад"));
         c.print(hintBuf);
         break;
     case TIMER_RUNNING:
-        snprintf(hintBuf, sizeof(hintBuf), "%s %s  [START] %s",
+        snprintf(hintBuf, sizeof(hintBuf), "%s %s  [START] %s  [C]SCN",
                  btnB(ui.swap_ab), L(uk, "Pause", "Пауза"),
                  L(uk, "Skip", "Пропуск"));
         c.print(hintBuf);
         break;
     case TIMER_PAUSED:
-        snprintf(hintBuf, sizeof(hintBuf), "%s %s  %s %s",
+        snprintf(hintBuf, sizeof(hintBuf), "%s %s  %s %s  [C]SCN",
                  btnA(ui.swap_ab), L(uk, "Resume", "Далі"),
                  btnB(ui.swap_ab), L(uk, "Back", "Назад"));
         c.print(hintBuf);

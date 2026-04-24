@@ -41,6 +41,13 @@ void storageInit()
         memset(settings.wifi_ssid, 0, sizeof(settings.wifi_ssid));
         memset(settings.wifi_pass, 0, sizeof(settings.wifi_pass));
         settings.ext_btn_pin_idx = 0;
+        memset(settings.obs_host, 0, sizeof(settings.obs_host));
+        settings.obs_port = OBS_DEFAULT_PORT;
+        memset(settings.obs_pass, 0, sizeof(settings.obs_pass));
+        strncpy(settings.obs_scene1, OBS_DEFAULT_SCENE1, 31);
+        settings.obs_scene1[31] = '\0';
+        strncpy(settings.obs_scene2, OBS_DEFAULT_SCENE2, 31);
+        settings.obs_scene2[31] = '\0';
 
         for (int i = 0; i < MAX_PRESETS; i++)
         {
@@ -89,6 +96,19 @@ void storageLoadSettings(AppSettings &settings)
     strncpy(settings.wifi_pass, pass.c_str(), 64);
     settings.wifi_pass[64] = '\0';
     settings.ext_btn_pin_idx = prefs.getUChar("ext_btn", 0);
+    String obs_host_s = prefs.getString("obs_host", "");
+    strncpy(settings.obs_host, obs_host_s.c_str(), 39);
+    settings.obs_host[39] = '\0';
+    settings.obs_port = prefs.getUShort("obs_port", OBS_DEFAULT_PORT);
+    String obs_pass_s = prefs.getString("obs_pass", "");
+    strncpy(settings.obs_pass, obs_pass_s.c_str(), 63);
+    settings.obs_pass[63] = '\0';
+    String obs_s1 = prefs.getString("obs_s1", OBS_DEFAULT_SCENE1);
+    strncpy(settings.obs_scene1, obs_s1.c_str(), 31);
+    settings.obs_scene1[31] = '\0';
+    String obs_s2 = prefs.getString("obs_s2", OBS_DEFAULT_SCENE2);
+    strncpy(settings.obs_scene2, obs_s2.c_str(), 31);
+    settings.obs_scene2[31] = '\0';
     prefs.end();
 
     if (settings.brightness >= BRIGHTNESS_COUNT)
@@ -110,6 +130,11 @@ void storageSaveSettings(const AppSettings &settings)
     prefs.putString("wifi_ssid", settings.wifi_ssid);
     prefs.putString("wifi_pass", settings.wifi_pass);
     prefs.putUChar("ext_btn", settings.ext_btn_pin_idx);
+    prefs.putString("obs_host", settings.obs_host);
+    prefs.putUShort("obs_port", settings.obs_port);
+    prefs.putString("obs_pass", settings.obs_pass);
+    prefs.putString("obs_s1", settings.obs_scene1);
+    prefs.putString("obs_s2", settings.obs_scene2);
     prefs.end();
 }
 

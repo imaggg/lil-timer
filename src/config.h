@@ -83,6 +83,11 @@ const char *const STEP_LABELS[] = {
 const uint8_t EXT_BTN_PINS[] = {12, 13, 14, 41, 47, 48};
 #define EXT_BTN_PIN_COUNT 6
 
+// --- OBS WebSocket ---
+#define OBS_DEFAULT_PORT 4455
+#define OBS_DEFAULT_SCENE1 "Darkroom"
+#define OBS_DEFAULT_SCENE2 "Lights On"
+
 // --- Display ---
 #define SCREEN_W 280
 #define SCREEN_H 240

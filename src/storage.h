@@ -23,6 +23,11 @@ struct AppSettings {
     char wifi_ssid[33];      // STA SSID (empty = no STA)
     char wifi_pass[65];      // STA password
     uint8_t ext_btn_pin_idx; // 0 = disabled, 1..EXT_BTN_PIN_COUNT = EXT_BTN_PINS[idx-1]
+    char obs_host[40];       // OBS WebSocket host/IP (empty = disabled)
+    uint16_t obs_port;       // OBS WebSocket port
+    char obs_pass[64];       // OBS WebSocket password (empty = no auth)
+    char obs_scene1[32];     // OBS scene name for scene 1 (darkroom)
+    char obs_scene2[32];     // OBS scene name for scene 2 (lights on)
 };
 
 void storageInit();
